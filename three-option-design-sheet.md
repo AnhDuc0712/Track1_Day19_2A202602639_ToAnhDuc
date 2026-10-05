@@ -1,35 +1,14 @@
 # Three-Option Design Sheet
 
-> Đây là tài liệu chung của nhóm. Điền nội dung vào từng option và thay link board nếu nhóm dùng artifact bên ngoài.
+| Thành phần | Option A (User Initiates / Truy xuất theo yêu cầu) | Option B (Conditional Checkpoint & Batch Synthesis) | Option C (Proactive Context & Constrained Chat) |
+| --- | --- | --- | --- |
+| Solution mechanism | Context On-Demand: Khi ôn tập, user quét chọn đoạn highlight không hiểu, bấm nút để AI tóm tắt lại đoạn văn bản chứa highlight đó. | Conditional Checkpoint & Batch Synthesis: AI quét highlight trên slide/PDF (kèm ngữ cảnh xung quanh) và bullet take-note. Khi tổng số items đạt 5, hỏi user có muốn tổng hợp ngay không. Nếu hoãn, lưu vào buffer và tổng hợp toàn bộ khi kết thúc buổi học. | Smart AI Note (Split-screen): Khi user kéo chọn và gắn màu để lưu đoạn bài giảng, AI tự động viết 2-3 câu giải thích ngữ cảnh. Có ô chat giới hạn, chỉ trả lời dựa trên note đã lưu và ngữ cảnh AI sinh ra; từ chối câu hỏi ngoài phạm vi. |
+| User làm gì? | Click vào từng đoạn highlight bị quên bối cảnh và yêu cầu AI giải thích. Đọc kết quả pop-up. | Đọc tài liệu, highlight ý quan trọng và ghi bullet take-note. Khi tổng số đạt 5, chọn Có để xem tổng hợp tại chỗ hoặc Không để tiếp tục học liền mạch; cuối buổi nhận tổng hợp nếu đã hoãn. | Kéo chọn đoạn văn bản và bấm màu để lưu khi đang đọc bài giảng. Review ngữ cảnh AI viết, sau đó Sửa hoặc Đóng. Hỏi AI trong ô chat dựa trên note đã lưu. |
+| AI làm gì? | Đợi lệnh. Khi được gọi, AI đọc đoạn trước/sau của highlight đó và xuất ra 1-2 câu tóm tắt ngữ cảnh. | Tự quét và trích xuất highlight cùng vị trí/ngữ cảnh và các bullet take-note; theo dõi bộ đếm. Tại ngưỡng 5, hỏi user có muốn tổng hợp. Nếu Có, đối chiếu ý quan trọng với điểm chưa hiểu, kèm trang/vị trí nguồn; nếu Không, xếp hàng và tự tổng hợp khi phiên học kết thúc. | Tự động viết 2-3 câu ngữ cảnh khi user lưu note. Trong chat, truy xuất note đã lưu và ngữ cảnh AI tạo để trả lời; từ chối câu hỏi ngoài phạm vi. |
+| Trigger | User chủ động click chọn "Explain Context" trên menu ngữ cảnh lúc ôn tập. | Trong buổi: `Count(Highlights) + Count(Take-note bullets) >= 5`. Cuối buổi: user hoàn thành hoặc đóng phiên học khi còn dữ liệu trong hàng đợi. | User kéo chọn văn bản và bấm màu để lưu ngay trong lúc đọc bài giảng; hành động lưu kích hoạt AI tạo ngữ cảnh. Chat được kích hoạt khi user gửi câu hỏi. |
+| Trade-off chính | Ưu: UI sạch sẽ lúc học. Nhược: Mất công click từng cái lúc ôn tập (lắt nhắt nhất). | Ưu: Hướng tới khôi phục ngữ cảnh có căn cứ, đồng thời cho user chọn tổng hợp ngay hay tiếp tục nghe giảng. Nhược: Câu hỏi Có/Không có thể gây xao nhãng; cần đồng bộ dữ liệu và trích dẫn đúng trang/vị trí. | Ưu: Ngữ cảnh được tạo ngay nên user ít sợ quên; chat tập trung trong phạm vi note, giảm trả lời lan man. Nhược: User phải Sửa/Đóng ngữ cảnh AI ngay lúc đang học, có thể gây gián đoạn; chat giới hạn phạm vi có thể hụt hẫng khi user muốn hỏi rộng hơn. |
 
-## Hypothesis Problem
-
-`[Dán hypothesis problem nhóm dùng trong Day 18.]`
-
-## Option A
-
-- **Tên option:** `[Tên ngắn]`
-- **Mô tả:** `[Giải pháp hoạt động như thế nào?]`
-- **User flow chính:** `[Bước 1] → [Bước 2] → [Bước 3]`
-- **Giả định cần kiểm chứng:** `[Assumption]`
-- **Prototype/artifact:** `[Link]`
-
-## Option B
-
-- **Tên option:** `[Tên ngắn]`
-- **Mô tả:** `[Giải pháp hoạt động như thế nào?]`
-- **User flow chính:** `[Bước 1] → [Bước 2] → [Bước 3]`
-- **Giả định cần kiểm chứng:** `[Assumption]`
-- **Prototype/artifact:** `[Link]`
-
-## Option C
-
-- **Tên option:** `[Tên ngắn]`
-- **Mô tả:** `[Giải pháp hoạt động như thế nào?]`
-- **User flow chính:** `[Bước 1] → [Bước 2] → [Bước 3]`
-- **Giả định cần kiểm chứng:** `[Assumption]`
-- **Prototype/artifact:** `[Link]`
-
-## Ghi chú chung
-
-`[Link board chung của nhóm hoặc các quyết định thiết kế quan trọng.]`
+# Distance check
+- A khác B vì Option A chờ user chủ động gọi giải thích từng highlight lúc ôn; Option B theo dõi highlight và take-note, chủ động hỏi tại ngưỡng 5 items rồi tổng hợp ngay hoặc cuối buổi.
+- B khác C vì Option B gom dữ liệu theo checkpoint và cho phép hoãn tổng hợp đến cuối phiên; Option C tạo ngữ cảnh cho từng highlight ngay lúc lưu và cung cấp chat giới hạn trên note đã lưu.
+- C khác A vì Option A chỉ giải thích theo yêu cầu khi ôn lại highlight; Option C chủ động sinh ngữ cảnh ngay lúc lưu note và bổ sung chat giới hạn trên note/ngữ cảnh đã lưu.
