@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart AI Note · Design the Experiment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', "ui-sans-serif", "system-ui", "sans-serif"],
+            serif: ['"Source Serif 4"', "Georgia", "serif"],
+            mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --paper: #f3efe7;
+      --ink: #1c1917;
+      --muted: #78716c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body.app {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: var(--ink);
+      background: white;
+      font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-main {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+
+    .col {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .scroll::-webkit-scrollbar-thumb {
+      background: #d6d3d1;
+      border-radius: 99px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .serif { font-family: "Source Serif 4", Georgia, serif; }
+
+    .lecture {
+      background: var(--paper);
+    }
+
+    .lecture-body {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 28px 28px 72px;
+    }
+
+    .lecture-body > p {
+      margin: 0 0 1rem;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 17.5px;
+      line-height: 1.72;
+      color: #292524;
+    }
+
+    .v-kicker {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #78716c;
+    }
+
+    .v-box, .v-warn, .v-ok {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .v-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+    .v-warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+    .v-ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+
+    .v-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+
+    .v-meta div {
+      background: white;
+      border: 1px dashed #d6d3d1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #78716c;
+    }
+
+    .v-meta strong { display: block; color: #1c1917; font-size: 13px; margin-bottom: 2px; }
+
+    .v-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 16px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .v-table th, .v-table td {
+      border: 1px solid #e7e5e4;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .v-table th { background: #fafaf9; font-weight: 650; color: #44403c; }
+
+    .lecture-body ul { margin: 0 0 14px; padding-left: 1.1rem; }
+    .lecture-body li { margin: 0 0 6px; font-size: 14.5px; line-height: 1.5; color: #292524; }
+
+    .out-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .lecture-body h2 {
+      margin: 1.6rem 0 0.7rem;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #1c1917;
+    }
+
+    .callout {
+      margin: 4px 0 18px;
+      padding: 12px 14px;
+      border-left: 3px solid #44403c;
+      background: rgba(255, 255, 255, 0.55);
+      color: #44403c;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .block-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 6px 0 22px;
+    }
+
+    .block-main { flex: 1; min-width: 0; }
+
+    .push-btn {
+      position: sticky;
+      top: 12px;
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d6d3d1;
+      background: white;
+      color: #292524;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: 600 13px/1 "Be Vietnam Pro", sans-serif;
+      box-shadow: 0 1px 2px rgba(28, 25, 23, 0.06);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .block-row:hover .push-btn,
+    .push-btn:hover {
+      transform: translateY(-1px);
+      border-color: #7c3aed;
+      color: #5b21b6;
+      box-shadow: 0 8px 20px rgba(91, 33, 182, 0.12);
+    }
+
+    .push-btn:disabled {
+      transform: none;
+      box-shadow: none;
+      color: #047857;
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+      cursor: default;
+    }
+
+    .push-btn:focus-visible,
+    .ai-ctrl:focus-visible,
+    .ghost-btn:focus-visible {
+      outline: 2px solid #7c3aed;
+      outline-offset: 2px;
+    }
+
+    .diagram-card {
+      margin: 0;
+      border: 3px solid #4f46e5;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #020617;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.16), 0 16px 40px rgba(15, 23, 42, 0.18);
+    }
+
+    .diagram-bar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 14px;
+      background: #4f46e5;
+      color: white;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+    }
+
+    .diagram-bar span:last-child {
+      letter-spacing: 0.04em;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    .diagram-body { padding: 14px; }
+
+    .diagram-label {
+      margin: 0 0 8px;
+      color: #a5b4fc;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .node {
+      border-radius: 10px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 4px;
+    }
+
+    .node-frame { background: #0284c7; color: white; }
+    .node-feat { background: #f59e0b; color: #1c1917; }
+    .node-bad { background: #e11d48; color: white; }
+    .node-ok { background: #059669; color: white; }
+
+    .flow-arrow {
+      margin: 8px 0;
+      text-align: center;
+      color: #c7d2fe;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .bilstm-shell {
+      border: 1px solid #818cf8;
+      border-radius: 14px;
+      padding: 12px;
+      background: #0f172a;
+    }
+
+    .lstm-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .lstm-row + .lstm-row { margin-top: 6px; }
+
+    .cell {
+      flex: 1;
+      text-align: center;
+      border-radius: 8px;
+      padding: 7px 2px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .cell-fwd {
+      background: #022c22;
+      border: 1px solid #34d399;
+      color: #d1fae5;
+    }
+
+    .cell-bwd {
+      background: #2e1064;
+      border: 1px solid #c4b5fd;
+      color: #ede9fe;
+    }
+
+    .arr {
+      flex: none;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .shell-note {
+      margin: 8px 0 0;
+      color: #cbd5e1;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .attn-node {
+      border-radius: 10px;
+      text-align: center;
+      background: #6d28d9;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 8px;
+    }
+
+    .out-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-top: 12px;
+      color: #cbd5e1;
+      font-size: 11px;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      margin-right: 6px;
+    }
+
+    .diagram-card figcaption {
+      margin: 0;
+      padding: 10px 14px 12px;
+      background: white;
+      color: #57534e;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .code-window {
+      margin: 0;
+      border: 3px solid #312e81;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0b1020;
+      box-shadow: 0 0 0 4px rgba(49, 46, 129, 0.14), 0 16px 40px rgba(15, 23, 42, 0.18);
+    }
+
+    .code-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #12182b;
+      color: #cbd5e1;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 12px;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 99px; display: inline-block; }
+    .dot-r { background: #fb7185; }
+    .dot-y { background: #fbbf24; }
+    .dot-g { background: #34d399; }
+    .fname { margin-left: 6px; }
+
+    pre.code {
+      margin: 0;
+      padding: 16px 16px 20px;
+      overflow-x: auto;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    .tok-k { color: #c4b5fd; }
+    .tok-s { color: #86efac; }
+    .tok-c { color: #64748b; font-style: italic; }
+    .tok-n { color: #fdba74; }
+    .tok-f { color: #93c5fd; }
+    .tok-cls { color: #fcd34d; }
+    .tok-b { color: #67e8f9; }
+
+    .note-panel {
+      background: white;
+      box-shadow: inset 3px 0 0 #8b5cf6;
+    }
+
+    #note-placeholder {
+      margin: 0;
+      padding: 22px 22px 0;
+      color: #a8a29e;
+      font-size: 15px;
+    }
+
+    #note-placeholder[hidden] { display: none !important; }
+
+    #note-stream {
+      display: flex;
+      flex-direction: column;
+      padding: 18px 18px 48px;
+    }
+
+    #note-stream[hidden] { display: none !important; }
+
+    #slot-code:not(:empty) { margin-top: 12px; }
+
+    #ai-slot {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.55s cubic-bezier(0.22, 0.8, 0.24, 1);
+    }
+
+    #ai-slot.is-open { grid-template-rows: 1fr; }
+
+    #ai-slot .clip {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    #ai-slot .ai-inner {
+      opacity: 0;
+      transform: translateY(-8px);
+      padding: 10px 0;
+      transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 0.8, 0.24, 1);
+    }
+
+    #ai-slot.is-open .ai-inner {
+      opacity: 1;
+      transform: none;
+    }
+
+    #ai-card {
+      background: #faf5ff;
+      border: 1px dashed #d8b4fe;
+      border-radius: 12px;
+    }
+
+    #ai-body textarea {
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      border: 0;
+      margin: 0;
+      padding: 8px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: inset 0 0 0 1px #d8b4fe;
+      color: #3b0764;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .ai-ctrl {
+      font-size: 12px;
+      font-weight: 650;
+      color: #6b21a8;
+      background: white;
+      border: 1px solid #e9d5ff;
+      border-radius: 8px;
+      padding: 3px 8px;
+      line-height: 1.3;
+      cursor: pointer;
+    }
+
+    .ai-ctrl:hover { background: #f3e8ff; }
+    .ai-ctrl:disabled { opacity: 0.45; cursor: default; }
+
+    .ghost-btn {
+      border: 1px solid #e7e5e4;
+      background: white;
+      color: #57534e;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font: 600 12px/1 "Be Vietnam Pro", sans-serif;
+      cursor: pointer;
+    }
+
+    .ghost-btn:hover { border-color: #c4b5fd; color: #5b21b6; }
+
+    .saved-text { margin-top: 14px; }
+
+    .notes-pane { flex: 1 1 58%; }
+
+    .chatbox {
+      flex: 1 1 42%;
+      min-height: 220px;
+      max-height: 46%;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid #ddd6fe;
+      background: #fafafa;
+    }
+
+    .chatbox-label {
+      margin: 0;
+      padding: 10px 14px 0;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6d28d9;
+    }
+
+    .chat-log {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 10px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-empty {
+      margin: 0;
+      color: #a8a29e;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .chat-empty[hidden] { display: none !important; }
+
+    .chat-turn {
+      display: flex;
+      margin: 0;
+    }
+
+    .chat-turn.user { justify-content: flex-end; }
+    .chat-turn.assistant { justify-content: flex-start; }
+
+    .saved-kicker,
+    .chat-kicker {
+      margin: 0 0 6px;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #78716c;
+    }
+
+    .saved-text blockquote {
+      margin: 0;
+      padding: 10px 12px;
+      border-left: 3px solid #44403c;
+      background: #fafaf9;
+      color: #1c1917;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .mini-ai {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.55s cubic-bezier(0.22, 0.8, 0.24, 1);
+    }
+
+    .mini-ai[hidden] { display: none !important; }
+
+    .mini-ai.is-open { grid-template-rows: 1fr; }
+    .mini-ai .clip { overflow: hidden; min-height: 0; }
+    .mini-ai .ai-inner { padding-top: 10px; }
+
+    .mini-ai-body textarea,
+    .chat-body textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      border: 0;
+      margin: 0;
+      padding: 8px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: inset 0 0 0 1px #d8b4fe;
+      color: #3b0764;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.55;
+      outline: none;
+    }
+
+    .chat-user {
+      max-width: 88%;
+      padding: 10px 12px;
+      border-radius: 14px 14px 4px 14px;
+      background: #6d28d9;
+      color: white;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .chat-body {
+      max-width: 88%;
+    }
+
+    .ask-form {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid #e7e5e4;
+      background: white;
+    }
+
+    .ask-form input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #e7e5e4;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .ask-form input:focus { border-color: #c4b5fd; }
+
+    .ask-form button {
+      flex: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      background: #6d28d9;
+      color: white;
+      font: 650 13px/1 "Be Vietnam Pro", sans-serif;
+      cursor: pointer;
+    }
+
+    .ask-form button:disabled { opacity: 0.55; cursor: default; }
+
+    #select-chip {
+      position: fixed;
+      z-index: 40;
+      display: flex;
+      gap: 6px;
+      transform: translate(-50%, calc(-100% - 10px));
+      padding: 6px;
+      border-radius: 999px;
+      background: white;
+      box-shadow: 0 10px 28px rgba(28, 25, 23, 0.16), 0 0 0 1px rgba(28, 25, 23, 0.06);
+    }
+
+    #select-chip[hidden] { display: none !important; }
+
+    .ink-btn {
+      width: 22px;
+      height: 22px;
+      border: 2px solid white;
+      border-radius: 999px;
+      box-shadow: 0 0 0 1px #d6d3d1;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .ink-btn:hover { transform: scale(1.08); }
+    .ink-btn:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
+    .ink-amber { background: #fbbf24; }
+    .ink-green { background: #34d399; }
+    .ink-sky { background: #38bdf8; }
+    .ink-pink { background: #f472b6; }
+    .ink-violet { background: #a78bfa; }
+
+    mark.ink-amber { background: #fde68a; color: inherit; }
+    mark.ink-green { background: #a7f3d0; color: inherit; }
+    mark.ink-sky { background: #bae6fd; color: inherit; }
+    mark.ink-pink { background: #fbcfe8; color: inherit; }
+    mark.ink-violet { background: #ddd6fe; color: inherit; }
+
+    .saved-text blockquote[data-color="amber"] { background: #fffbeb; border-left-color: #f59e0b; }
+    .saved-text blockquote[data-color="green"] { background: #ecfdf5; border-left-color: #10b981; }
+    .saved-text blockquote[data-color="sky"] { background: #f0f9ff; border-left-color: #0ea5e9; }
+    .saved-text blockquote[data-color="pink"] { background: #fdf2f8; border-left-color: #ec4899; }
+    .saved-text blockquote[data-color="violet"] { background: #f5f3ff; border-left-color: #8b5cf6; }
+
+    .rise { animation: rise 0.28s ease; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #ai-slot,
+      #ai-slot .ai-inner,
+      .mini-ai,
+      .rise,
+      .push-btn {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="app">
+  <header class="shrink-0 h-14 border-b border-stone-200 bg-white flex items-center justify-between px-5">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="h-8 w-8 rounded-lg bg-stone-900 text-white grid place-items-center text-sm font-semibold" aria-hidden="true">V</div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold leading-tight truncate">Studio bài giảng</p>
+        <p class="text-[11px] text-stone-500 leading-tight">Track 1 · Human-Centered AI Design</p>
+      </div>
+    </div>
+    <p class="hidden sm:block text-xs text-stone-500">Day 18–19 · Design the Experiment</p>
+  </header>
+
+  <main class="app-main">
+    <section class="col lecture" aria-label="Màn hình bài giảng">
+      <div class="shrink-0 border-b border-stone-200/80 bg-[#f3efe7]/95 px-6 py-3">
+        <p class="text-[11px] font-semibold tracking-[0.16em] text-stone-500">MÀN HÌNH BÀI GIẢNG</p>
+      </div>
+      <div class="scroll">
+        <article class="lecture-body">
+          <p class="v-kicker">Track 1 · Day 18–19 · Lesson</p>
+          <h1 class="serif text-[2rem] leading-[1.2] font-semibold text-stone-900 mb-3">Design the Experiment</h1>
+          <div class="flex flex-wrap gap-2 mb-5 text-xs text-stone-600">
+            <span class="rounded-full bg-white px-2.5 py-1 border border-stone-200">190 phút</span>
+            <span class="rounded-full bg-white px-2.5 py-1 border border-stone-200">Nhóm 3 người</span>
+            <span class="rounded-full bg-white px-2.5 py-1 border border-stone-200">3 option A / B / C</span>
+          </div>
+
+          <div class="callout">Kéo chọn một đoạn, rồi bấm một màu trên thanh hiện ra để đưa vào note. AI đọc ngữ cảnh của đúng đoạn ấy. Hỏi lại ở ô phía dưới.</div>
+
+          <h2>Đề bài và cách làm</h2>
+          <div class="v-box">Mỗi người phụ trách một option, nhưng vẫn test cả A, B và C với một người ngoài nhóm. Nộp bài cá nhân. Làm hết các chặng, trừ khi còn dưới 20 phút.</div>
+          <div class="v-meta">
+            <div><strong>Tên nhóm</strong>điền trước khi vào evidence</div>
+            <div><strong>Case</strong>giữ nguyên case Day 17</div>
+            <div><strong>Thành viên</strong>mỗi người một option</div>
+          </div>
+          <p>Cuối buổi, nhóm phải có ba hướng khác nhau ở đúng chỗ người dùng quyết định, chứ không phải ba bài viết khác chủ đề. Phần còn lại của prototype nên trông như cùng một sản phẩm.</p>
+
+          <h2>Đầu vào từ Day 17</h2>
+          <p>Không đổi case. Nếu Day 17 đang là AI Tutor, AI Notes hoặc AI Support Radar thì buổi này xây tiếp trên đúng case đó.</p>
+          <ul>
+            <li>Hypothesis Problem của cả nhóm.</li>
+            <li>Ba Practice Notes, thường mỗi người một note.</li>
+            <li>Solution Parking Lot, ít nhất năm hướng.</li>
+            <li>Conversation Guide Day 16 chỉ để nhớ bối cảnh.</li>
+          </ul>
+          <div class="v-ok">Được kết luận: với hypothesis này, nhóm đã thử ba cách. Tester đã làm một việc cụ thể, nên vòng sau sẽ sửa chỗ đó.</div>
+          <div class="v-warn">Không được kết luận: người dùng đã xác nhận solution này là đúng.</div>
+
+          <h2>Sơ đồ buổi lab</h2>
+          <div class="block-row">
+            <div class="block-main">
+              <figure class="diagram-card" id="diagram-card">
+                <div class="diagram-bar">
+                  <span>HÌNH 1 · LUỒNG BUỔI LAB</span>
+                  <span>70% chung · khác ở critical interaction</span>
+                </div>
+                <div class="diagram-body">
+                  <p class="diagram-label">1 · Bốn chặng dùng chung</p>
+                  <div class="node-grid" aria-hidden="true">
+                    <div class="node node-frame">Evidence</div>
+                    <div class="node node-frame">3 options</div>
+                    <div class="node node-frame">Design</div>
+                    <div class="node node-frame">Build</div>
+                  </div>
+                  <p class="flow-arrow">↓ &nbsp; cùng user, situation, task và dữ liệu mẫu</p>
+                  <div class="bilstm-shell">
+                    <p class="diagram-label">2 · Phần được phép khác nhau</p>
+                    <div class="lstm-row" aria-hidden="true">
+                      <div class="cell cell-fwd">Context</div>
+                      <span class="arr">→</span>
+                      <div class="cell cell-fwd">Màn chung</div>
+                      <span class="arr">→</span>
+                      <div class="cell cell-bwd">Quyết định</div>
+                      <span class="arr">→</span>
+                      <div class="cell cell-fwd">Kết quả</div>
+                    </div>
+                    <p class="shell-note">Ô tím là critical interaction. A, B và C chỉ tách nhau ở ô này. Các ô còn lại trông như cùng một sản phẩm.</p>
+                  </div>
+                  <p class="flow-arrow">↓ &nbsp; ba prototype đem đi test</p>
+                  <div class="out-grid cols-3" aria-hidden="true">
+                    <div class="node node-ok">Option A</div>
+                    <div class="node node-feat">Option B</div>
+                    <div class="node node-bad">Option C</div>
+                  </div>
+                </div>
+                <figcaption>Sơ đồ buổi: evidence và màn chung đi cùng nhau. Ba option chỉ khác ở khoảnh khắc người dùng phải quyết định.</figcaption>
+              </figure>
+            </div>
+            <button type="button" id="push-image" class="push-btn" aria-label="Đẩy sơ đồ buổi lab vào Note">
+              <span class="push-icon" aria-hidden="true">📎</span>
+              <span class="push-label">Đẩy vào Note</span>
+            </button>
+          </div>
+
+          <p>Nhìn sơ đồ từ trên xuống: bốn chặng đầu tạo mặt chung. Ô quyết định là chỗ duy nhất ba option được quyền khác nhau. Nếu khác từ màn đầu, tester đang so ba sản phẩm, không so ba cách xử lý cùng một tình huống.</p>
+
+          <h2>Chặng 1 · Tổng hợp evidence</h2>
+          <p>Đặt Practice Notes cạnh nhau. Mỗi người đọc một note, cả nhóm chỉ giữ việc người dùng đã làm hoặc đã nói. Phần diễn giải để riêng, không trộn vào bằng chứng.</p>
+          <table class="v-table">
+            <thead>
+              <tr><th>Practice Note</th><th>Người dùng đã làm hoặc nói</th><th>Nhóm đang diễn giải</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td></td><td></td></tr>
+              <tr><td>2</td><td></td><td></td></tr>
+              <tr><td>3</td><td></td><td></td></tr>
+            </tbody>
+          </table>
+          <div class="v-box">Khi [tình huống], [người dùng] gặp khó trong việc [việc cần làm] vì [rào cản], dẫn đến [hệ quả].</div>
+
+          <h2>Chặng 2 · Chọn ba option</h2>
+          <p>Đọc lại parking lot. Giữ hướng nào cùng một việc cần làm. Bỏ hướng chỉ đổi câu chữ, hoặc đổi sang task khác. Ba option cuối cùng phải giải cùng hypothesis, nhưng khác nhau ở quyết định của người dùng.</p>
+          <table class="v-table">
+            <thead><tr><th>Giữ nguyên cho cả A, B, C</th><th>Quyết định chung</th></tr></thead>
+            <tbody>
+              <tr><td>Target user</td><td>Cùng một người</td></tr>
+              <tr><td>Situation</td><td>Cùng một lúc vướng</td></tr>
+              <tr><td>Task</td><td>Cùng một việc cần xong</td></tr>
+              <tr><td>Content mẫu</td><td>Cùng dữ liệu trên màn hình</td></tr>
+            </tbody>
+          </table>
+
+          <h2>Chặng 3 · Human–AI design pass</h2>
+          <p>Với từng option, trả lời bốn câu trước khi vẽ màn hình. Đây là chỗ ba hướng được phép tách nhau.</p>
+          <ul>
+            <li><strong>Expectation.</strong> Trước khi AI lên tiếng, người dùng sắp làm gì?</li>
+            <li><strong>Role and agency.</strong> AI đề xuất, hỏi xin, hay tự làm?</li>
+            <li><strong>Evidence and uncertainty.</strong> Người dùng thấy căn cứ nào, và thấy chỗ AI không chắc không?</li>
+            <li><strong>Control and recovery.</strong> Xem trước, sửa, từ chối, hoàn tác ra sao?</li>
+          </ul>
+
+          <h2>Lời mở khi test</h2>
+          <p>Đoạn dưới là lời facilitator nói trước khi đưa prototype. Nó đi với sơ đồ ở trên: tester chỉ nhận context chung, không nghe nhóm pitch option nào.</p>
+
+          <div class="block-row">
+            <div class="block-main">
+              <div class="code-window" id="code-card" translate="no">
+                <div class="code-top">
+                  <span class="dot dot-r"></span>
+                  <span class="dot dot-y"></span>
+                  <span class="dot dot-g"></span>
+                  <span class="fname">test-opening.txt · lời mở đầu</span>
+                </div>
+                <pre id="code-body" class="code"></pre>
+              </div>
+            </div>
+            <button type="button" id="push-code" class="push-btn" aria-label="Đẩy lời mở test vào Note">
+              <span class="push-icon" aria-hidden="true">📎</span>
+              <span class="push-label">Đẩy vào Note</span>
+            </button>
+          </div>
+
+          <h2>Chặng 5 và 6 · Test</h2>
+          <p>Mỗi người test một option với một người ngoài nhóm. Mở đầu bằng context ngắn, đưa task, rồi im. Ghi first action, chỗ họ dừng, chỗ họ bỏ qua evidence, và chỗ họ cần hoàn tác.</p>
+          <table class="v-table">
+            <thead><tr><th>Phút</th><th>Việc</th></tr></thead>
+            <tbody>
+              <tr><td>0–2</td><td>Cho tình huống, không giới thiệu giải pháp</td></tr>
+              <tr><td>2–14</td><td>Tester dùng prototype</td></tr>
+              <tr><td>14–18</td><td>Hỏi vì sao họ làm vậy</td></tr>
+              <tr><td>18–20</td><td>Viết Feedback Note ngay</td></tr>
+            </tbody>
+          </table>
+          <div class="v-box">Trong tình huống này, bạn chọn A, B hay C? Vì sao?</div>
+
+          <h2>Quy tắc dùng AI trong lab</h2>
+          <div class="v-ok">Được nhờ AI gợi ý wording, dữ liệu mẫu, hoặc dàn màn hình. Người trong nhóm vẫn chọn hướng và tự sửa.</div>
+          <div class="v-warn">Không đưa AI viết observation, feedback, hay kết luận thay tester. Không để AI bịa quote. Không để AI chốt hypothesis hộ nhóm.</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="col note-panel" aria-label="Smart AI Note">
+      <div class="shrink-0 border-b border-stone-200 bg-white px-5 py-3 flex items-center justify-between gap-3">
+        <div>
+          <p class="whitespace-nowrap text-[11px] font-semibold tracking-[0.14em] text-violet-700">SMART AI NOTE</p>
+          <p class="text-[11px] text-stone-400 leading-tight mt-0.5">Chọn chữ, rồi bấm màu</p>
+        </div>
+        <button type="button" id="note-reset" class="ghost-btn">Đặt lại</button>
+      </div>
+      <div class="scroll notes-pane" id="note-editor">
+        <p id="note-placeholder">Ghi chú của bạn sẽ xuất hiện ở đây...</p>
+        <div id="note-stream" hidden>
+          <div id="slot-image"></div>
+          <div id="ai-slot" aria-hidden="true" inert>
+            <div class="clip">
+              <div class="ai-inner">
+                <div id="ai-card" class="relative bg-purple-50 border border-dashed border-purple-300 rounded-xl p-4">
+                  <div class="mb-2 flex justify-end gap-1.5">
+                    <button type="button" id="ai-edit" class="ai-ctrl">Sửa</button>
+                    <button type="button" id="ai-close" class="ai-ctrl" aria-label="Đóng AI Context">X</button>
+                  </div>
+                  <div id="ai-body" class="text-sm leading-relaxed text-purple-900">✨ AI Context ngầm định: Lời mở test bên dưới đi với sơ đồ buổi lab bạn vừa lưu. Tester chỉ nhận context chung, không được nghe nhóm pitch option nào.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="slot-code"></div>
+          <div id="text-notes"></div>
+        </div>
+      </div>
+      <section class="chatbox" aria-label="Hỏi trong phạm vi note">
+        <p class="chatbox-label">Hỏi trong phạm vi note</p>
+        <div id="chat-log" class="chat-log">
+          <p id="chat-empty" class="chat-empty">Chat này chỉ trả lời từ các note phía trên và ngữ cảnh AI đã viết kèm những note đó.</p>
+        </div>
+        <form id="ask-form" class="ask-form">
+          <input id="ask-input" type="text" autocomplete="off" placeholder="Hỏi trong các note này..." />
+          <button type="submit" id="ask-send">Hỏi</button>
+        </form>
+      </section>
+      <p id="live-status" class="sr-only" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <div id="select-chip" hidden role="toolbar" aria-label="Chọn màu để đưa vào note">
+    <button type="button" class="ink-btn ink-amber" data-color="amber" aria-label="Note màu vàng"></button>
+    <button type="button" class="ink-btn ink-green" data-color="green" aria-label="Note màu lá"></button>
+    <button type="button" class="ink-btn ink-sky" data-color="sky" aria-label="Note màu dương"></button>
+    <button type="button" class="ink-btn ink-pink" data-color="pink" aria-label="Note màu hồng"></button>
+    <button type="button" class="ink-btn ink-violet" data-color="violet" aria-label="Note màu tím"></button>
+  </div>
+
+  <script>
+    (() => {
+      const PY_SOURCE = [
+        "Chúng mình đang thử ba cách thiết kế.",
+        "Không kiểm tra bạn. Không có câu trả lời đúng hay sai.",
+        "",
+        "Bạn hãy tự thao tác và nói to điều mình đang nghĩ.",
+        "Mình sẽ cố gắng không hướng dẫn.",
+        "",
+        "Tình huống:",
+        "Bạn đang làm dở một việc trong case Day 17",
+        "và bị kẹt đúng chỗ hypothesis đã chốt.",
+        "",
+        "Việc cần xong:",
+        "Hoàn thành việc đó với màn hình này.",
+        "Chọn cách bạn thấy hợp, rồi nói vì sao.",
+      ].join("\n");
+
+      const PY_SOURCE_UNUSED = [
+        "class ViolenceBiLSTM(nn.Module):",
+        "    def __init__(",
+        "        self,",
+        "        input_dim: int = 512,",
+        "        hidden_dim: int = 256,",
+        "        num_layers: int = 2,",
+        "        num_classes: int = 2,",
+        "        dropout: float = 0.35,",
+        "    ) -> None:",
+        "        super().__init__()",
+        "        self.input_norm = nn.LayerNorm(input_dim)",
+        "        self.frame_encoder = nn.Sequential(",
+        "            nn.Linear(input_dim, hidden_dim),",
+        "            nn.GELU(),",
+        "            nn.Dropout(dropout),",
+        "        )",
+        "        self.temporal = nn.LSTM(",
+        "            input_size=hidden_dim,",
+        "            hidden_size=hidden_dim,",
+        "            num_layers=num_layers,",
+        "            batch_first=True,",
+        "            bidirectional=True,",
+        "            dropout=dropout if num_layers > 1 else 0.0,",
+        "        )",
+        "        self.attn = nn.Linear(hidden_dim * 2, 1)",
+        "        self.classifier = nn.Sequential(",
+        "            nn.Linear(hidden_dim * 2, hidden_dim),",
+        "            nn.ReLU(inplace=True),",
+        "            nn.Dropout(dropout),",
+        "            nn.Linear(hidden_dim, num_classes),",
+        "        )",
+        "",
+        "    def forward(self, frames: torch.Tensor) -> torch.Tensor:",
+        "        # frames: (B, T, D) — đặc trưng của các frame liên tiếp",
+        "        x = self.frame_encoder(self.input_norm(frames))",
+        "        sequence, _ = self.temporal(x)          # (B, T, 2H)",
+        "        score = self.attn(sequence)             # (B, T, 1)",
+        "        weight = torch.softmax(score, dim=1)",
+        "        context = torch.sum(weight * sequence, dim=1)",
+        "        return self.classifier(context)",
+      ].join("\n");
+
+      const KEYWORDS = new Set(
+        "import from as class def return True False None in if elif else with not and or pass lambda yield".split(" ")
+      );
+      const BUILTINS = new Set(["int", "float", "str", "bool", "torch", "nn", "super"]);
+
+      function escapeHtml(value) {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function highlightLine(line) {
+        let html = "";
+        let i = 0;
+        while (i < line.length) {
+          const ch = line[i];
+          if (ch === "#") {
+            html += `<span class="tok-c">${escapeHtml(line.slice(i))}</span>`;
+            break;
+          }
+          if (ch === '"' || ch === "'") {
+            let j = i + 1;
+            while (j < line.length && line[j] !== ch) {
+              if (line[j] === "\\") j += 1;
+              j += 1;
+            }
+            j = line[j] === ch ? j + 1 : line.length;
+            html += `<span class="tok-s">${escapeHtml(line.slice(i, j))}</span>`;
+            i = j;
+            continue;
+          }
+          if (/[0-9]/.test(ch) && (i === 0 || /[\s([\],=:]/.test(line[i - 1]))) {
+            let j = i;
+            while (j < line.length && /[0-9.]/.test(line[j])) j += 1;
+            html += `<span class="tok-n">${escapeHtml(line.slice(i, j))}</span>`;
+            i = j;
+            continue;
+          }
+          if (/[A-Za-z_]/.test(ch)) {
+            let j = i;
+            while (j < line.length && /[A-Za-z0-9_]/.test(line[j])) j += 1;
+            const word = line.slice(i, j);
+            const call = /^\s*\(/.test(line.slice(j));
+            let cls = "";
+            if (KEYWORDS.has(word) || word === "self") cls = "tok-k";
+            else if (BUILTINS.has(word)) cls = "tok-b";
+            else if (/^[A-Z]/.test(word)) cls = "tok-cls";
+            else if (call) cls = "tok-f";
+            html += cls ? `<span class="${cls}">${escapeHtml(word)}</span>` : escapeHtml(word);
+            i = j;
+            continue;
+          }
+          html += escapeHtml(ch);
+          i += 1;
+        }
+        return html;
+      }
+
+      document.getElementById("code-body").textContent = PY_SOURCE;
+
+      const placeholder = document.getElementById("note-placeholder");
+      const stream = document.getElementById("note-stream");
+      const slotImage = document.getElementById("slot-image");
+      const slotCode = document.getElementById("slot-code");
+      const aiSlot = document.getElementById("ai-slot");
+      const aiBody = document.getElementById("ai-body");
+      const editBtn = document.getElementById("ai-edit");
+      const closeBtn = document.getElementById("ai-close");
+      const live = document.getElementById("live-status");
+      const AI_COPY = aiBody.textContent.trim();
+
+      const textNotes = document.getElementById("text-notes");
+      const chatLog = document.getElementById("chat-log");
+      const chatEmpty = document.getElementById("chat-empty");
+      const askForm = document.getElementById("ask-form");
+      const askInput = document.getElementById("ask-input");
+      const askSend = document.getElementById("ask-send");
+      const lecture = document.querySelector(".lecture-body");
+      const lectureTitle = document.querySelector(".lecture-body h1").textContent.trim();
+      const chip = document.getElementById("select-chip");
+
+      const state = {
+        image: false,
+        code: false,
+        aiOpen: false,
+        dismissed: false,
+        editing: false,
+        timer: 0,
+        token: 0,
+        generation: 0,
+        chipTimer: 0,
+        pending: null,
+        memory: [],
+        chat: [],
+      };
+
+      function say(message) {
+        live.textContent = "";
+        live.textContent = message;
+      }
+
+      function revealStream() {
+        placeholder.hidden = true;
+        stream.hidden = false;
+      }
+
+      function cloneBlock(id) {
+        const node = document.getElementById(id).cloneNode(true);
+        node.removeAttribute("id");
+        node.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+        return node;
+      }
+
+      function markPushed(button) {
+        button.disabled = true;
+        button.querySelector(".push-icon").textContent = "✓";
+        button.querySelector(".push-label").textContent = "Đã vào Note";
+      }
+
+      function restoreButton(button, label) {
+        button.disabled = false;
+        button.querySelector(".push-icon").textContent = "📎";
+        button.querySelector(".push-label").textContent = label;
+      }
+
+      function pushImage() {
+        if (state.image) return;
+        const clone = cloneBlock("diagram-card");
+        clone.classList.add("rise");
+        slotImage.replaceChildren(clone);
+        state.image = true;
+        revealStream();
+        markPushed(document.getElementById("push-image"));
+        state.memory.push({
+          kind: "diagram",
+          heading: "Sơ đồ khối",
+          text: "Sơ đồ buổi lab: evidence, ba option, design và build dùng chung. A, B, C chỉ khác ở critical interaction.",
+          context: "",
+        });
+        say("Đã đưa sơ đồ buổi lab vào ghi chú.");
+      }
+
+      function scheduleAI() {
+        const ticket = ++state.token;
+        window.clearTimeout(state.timer);
+        state.timer = window.setTimeout(() => {
+          if (ticket !== state.token) return;
+          openAI();
+        }, 2500);
+      }
+
+      function pushCode() {
+        if (state.code) return;
+        const clone = cloneBlock("code-card");
+        clone.classList.add("rise");
+        slotCode.replaceChildren(clone);
+        state.code = true;
+        revealStream();
+        markPushed(document.getElementById("push-code"));
+        state.memory.push({
+          kind: "code",
+          heading: "Lời mở khi test",
+          text: PY_SOURCE,
+          context: "",
+        });
+        say("Đã đưa lời mở test vào ghi chú.");
+        if (!state.dismissed && !state.aiOpen) scheduleAI();
+        slotCode.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function openAI() {
+        if (state.dismissed || state.aiOpen || !state.image || !state.code) return;
+        state.aiOpen = true;
+        aiSlot.inert = false;
+        aiSlot.setAttribute("aria-hidden", "false");
+        aiSlot.classList.add("is-open");
+        const codeNote = state.memory.find((item) => item.kind === "code");
+        if (codeNote) codeNote.context = AI_COPY;
+        say("AI đã chèn ngữ cảnh giữa sơ đồ và đoạn code.");
+        document.getElementById("ai-card").scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      function closeAI() {
+        state.dismissed = true;
+        state.aiOpen = false;
+        window.clearTimeout(state.timer);
+        state.token += 1;
+        aiSlot.classList.remove("is-open");
+        aiSlot.inert = true;
+        aiSlot.setAttribute("aria-hidden", "true");
+        say("Đã đóng AI Context. Đoạn code nằm sát sơ đồ.");
+      }
+
+      function editAI() {
+        if (state.editing || !state.aiOpen) return;
+        state.editing = true;
+        const area = document.createElement("textarea");
+        area.value = aiBody.textContent.trim();
+        area.spellcheck = false;
+        area.setAttribute("aria-label", "Sửa nội dung AI Context");
+        aiBody.replaceChildren(area);
+        editBtn.disabled = true;
+        area.focus();
+        const end = area.value.length;
+        area.setSelectionRange(end, end);
+      }
+
+      function headingFor(node) {
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        const heads = [...lecture.querySelectorAll("h1, h2")];
+        let found = lectureTitle;
+        for (const head of heads) {
+          if (head.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            found = head.textContent.trim();
+          }
+        }
+        return found;
+      }
+
+      function aroundFor(node, excerpt) {
+        const el = node.nodeType === 1 ? node : node.parentElement;
+        const block = el.closest("p, h1, h2, li, figcaption, pre, .shell-note, .diagram-body");
+        const raw = (block ? block.innerText : lecture.innerText).replace(/\s+/g, " ").trim();
+        const at = raw.indexOf(excerpt.slice(0, 40));
+        if (at < 0) return raw.slice(0, 1600);
+        const start = Math.max(0, at - 500);
+        return raw.slice(start, start + 1600);
+      }
+
+      function hideColorBar() {
+        chip.hidden = true;
+        state.pending = null;
+      }
+
+      function placeColorBar(range) {
+        const rect = range.getBoundingClientRect();
+        if (!rect.width && !rect.height) return;
+        chip.hidden = false;
+        chip.style.left = `${rect.left + Math.min(rect.width, 280) / 2}px`;
+        chip.style.top = `${Math.max(12, rect.top)}px`;
+      }
+
+      function paintRange(range, color) {
+        const mark = document.createElement("mark");
+        mark.className = `ink-${color}`;
+        try {
+          range.surroundContents(mark);
+        } catch (error) {
+          try {
+            mark.appendChild(range.extractContents());
+            range.insertNode(mark);
+          } catch (inner) {
+            mark.remove();
+          }
+        }
+      }
+
+      function bindMiniCard(article, note) {
+        const slot = article.querySelector(".mini-ai");
+        const body = article.querySelector(".mini-ai-body");
+        article.addEventListener("click", (event) => {
+          const act = event.target.closest("[data-act]")?.dataset.act;
+          if (!act) return;
+          if (act === "close") {
+            slot.classList.remove("is-open");
+            note.context = "";
+            say("Đã đóng phần AI Context của đoạn vừa lưu.");
+          }
+          if (act === "edit" && !body.querySelector("textarea")) {
+            const area = document.createElement("textarea");
+            area.value = body.textContent.trim();
+            area.spellcheck = false;
+            area.setAttribute("aria-label", "Sửa nội dung AI Context");
+            body.replaceChildren(area);
+            area.focus();
+            area.addEventListener("input", () => {
+              note.context = area.value;
+            });
+          }
+        });
+      }
+
+      async function explainNote(note, article, generation) {
+        const slot = article.querySelector(".mini-ai");
+        const body = article.querySelector(".mini-ai-body");
+        body.textContent = "✨ AI đang đọc ngữ cảnh đoạn bạn vừa lưu...";
+        slot.hidden = false;
+        requestAnimationFrame(() => slot.classList.add("is-open"));
+        try {
+          const response = await fetch("/api/context", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: lectureTitle,
+              heading: note.heading,
+              excerpt: note.text,
+              around: note.around,
+            }),
+          });
+          const data = await response.json();
+          if (generation !== state.generation) return;
+          if (!response.ok) throw new Error(data.error || "Không gọi được AI.");
+          note.context = String(data.text || "").trim();
+          body.textContent = `✨ ${note.context}`;
+          say("AI đã đọc ngữ cảnh đoạn vừa lưu.");
+        } catch (error) {
+          if (generation !== state.generation) return;
+          body.textContent = `✨ Không đọc được ngữ cảnh. ${error.message}`;
+        }
+      }
+
+      function addTextNote(text, node, range, color) {
+        const excerpt = text.replace(/\s+/g, " ").trim();
+        if (excerpt.length < 4) return;
+        const existing = state.memory.find((item) => item.kind === "text" && item.text === excerpt);
+        if (existing) {
+          existing.color = color;
+          const prior = textNotes.querySelector(`[data-excerpt="${CSS.escape(excerpt)}"] blockquote`);
+          if (prior) prior.dataset.color = color;
+          if (range) paintRange(range, color);
+          return;
+        }
+        const note = {
+          kind: "text",
+          heading: headingFor(node),
+          text: excerpt,
+          around: aroundFor(node, excerpt),
+          context: "",
+          color,
+        };
+        state.memory.push(note);
+        const article = document.createElement("article");
+        article.className = "saved-text rise";
+        article.dataset.excerpt = excerpt;
+        const kicker = document.createElement("p");
+        kicker.className = "saved-kicker";
+        kicker.textContent = `Đã lưu · ${note.heading}`;
+        const quote = document.createElement("blockquote");
+        quote.dataset.color = color;
+        quote.textContent = excerpt;
+        const slot = document.createElement("div");
+        slot.className = "mini-ai";
+        slot.hidden = true;
+        slot.innerHTML = `
+          <div class="clip">
+            <div class="ai-inner">
+              <div class="mini-ai-card relative bg-purple-50 border border-dashed border-purple-300 rounded-xl p-4">
+                <div class="mb-2 flex justify-end gap-1.5">
+                  <button type="button" class="ai-ctrl" data-act="edit">Sửa</button>
+                  <button type="button" class="ai-ctrl" data-act="close" aria-label="Đóng AI Context">X</button>
+                </div>
+                <div class="mini-ai-body text-sm leading-relaxed text-purple-900"></div>
+              </div>
+            </div>
+          </div>`;
+        article.append(kicker, quote, slot);
+        textNotes.appendChild(article);
+        bindMiniCard(article, note);
+        revealStream();
+        if (range) paintRange(range, color);
+        article.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        say("Đã đưa đoạn đã chọn màu vào ghi chú.");
+        explainNote(note, article, state.generation);
+      }
+
+      function showColorBar() {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+        const node = selection.anchorNode;
+        if (!node || !lecture.contains(node)) return;
+        const text = selection.toString().replace(/\s+/g, " ").trim();
+        if (text.length < 4) return;
+        const range = selection.getRangeAt(0).cloneRange();
+        state.pending = { text, node, range };
+        placeColorBar(range);
+      }
+
+      function notesForChat() {
+        return state.memory.map((note) => ({
+          kind: note.kind,
+          heading: note.heading || "",
+          text: note.text,
+          context: note.context || "",
+        }));
+      }
+
+      function appendTurn(role, text) {
+        chatEmpty.hidden = true;
+        const turn = document.createElement("article");
+        turn.className = `chat-turn ${role} rise`;
+        const body = document.createElement("div");
+        if (role === "user") {
+          body.className = "chat-user";
+          body.textContent = text;
+        } else {
+          body.className = "chat-body relative bg-purple-50 border border-dashed border-purple-300 rounded-xl p-3 text-sm leading-relaxed text-purple-900";
+          body.textContent = text;
+        }
+        turn.append(body);
+        chatLog.appendChild(turn);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        return body;
+      }
+
+      async function askQuestion(question) {
+        const clean = question.trim();
+        if (!clean) return;
+        askInput.value = "";
+        state.chat.push({ role: "user", content: clean });
+        appendTurn("user", clean);
+        if (!state.memory.length) {
+          const reply = "Hãy kéo chọn một đoạn và bấm một màu để lưu note trước. Chat này chỉ trả lời từ note và ngữ cảnh AI đã viết.";
+          state.chat.push({ role: "assistant", content: reply });
+          appendTurn("assistant", `✨ ${reply}`);
+          return;
+        }
+        askSend.disabled = true;
+        const pending = appendTurn("assistant", "Đang trả lời trong phạm vi note...");
+        try {
+          const history = state.chat.slice(0, -1);
+          const response = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question: clean,
+              notes: notesForChat(),
+              history,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Không gọi được AI.");
+          const reply = String(data.text || "").trim();
+          state.chat.push({ role: "assistant", content: reply });
+          pending.textContent = reply;
+          say("AI đã trả lời theo ngữ cảnh đã lưu.");
+        } catch (error) {
+          const reply = `Không trả lời được. ${error.message}`;
+          state.chat.push({ role: "assistant", content: reply });
+          pending.textContent = `✨ ${reply}`;
+        } finally {
+          askSend.disabled = false;
+          askInput.focus();
+        }
+      }
+
+      function resetNote() {
+        window.clearTimeout(state.timer);
+        window.clearTimeout(state.chipTimer);
+        state.token += 1;
+        state.generation += 1;
+        state.image = false;
+        state.code = false;
+        state.aiOpen = false;
+        state.dismissed = false;
+        state.editing = false;
+        state.memory = [];
+        state.chat = [];
+        slotImage.replaceChildren();
+        slotCode.replaceChildren();
+        textNotes.replaceChildren();
+        chatLog.replaceChildren(chatEmpty);
+        chatEmpty.hidden = false;
+        hideColorBar();
+        aiBody.textContent = AI_COPY;
+        editBtn.disabled = false;
+        aiSlot.classList.remove("is-open");
+        aiSlot.inert = true;
+        aiSlot.setAttribute("aria-hidden", "true");
+        stream.hidden = true;
+        placeholder.hidden = false;
+        askSend.disabled = false;
+        restoreButton(document.getElementById("push-image"), "Đẩy vào Note");
+        restoreButton(document.getElementById("push-code"), "Đẩy vào Note");
+        say("Đã đặt lại ghi chú.");
+      }
+
+      document.getElementById("push-image").addEventListener("click", pushImage);
+      document.getElementById("push-code").addEventListener("click", pushCode);
+      editBtn.addEventListener("click", editAI);
+      closeBtn.addEventListener("click", closeAI);
+      document.getElementById("note-reset").addEventListener("click", resetNote);
+      let holdingBar = false;
+      lecture.addEventListener("mouseup", showColorBar);
+      chip.addEventListener("pointerdown", (event) => {
+        holdingBar = true;
+        event.preventDefault();
+      });
+      chip.addEventListener("pointerup", () => {
+        holdingBar = false;
+      });
+      chip.addEventListener("click", (event) => {
+        const color = event.target.closest("[data-color]")?.dataset.color;
+        const pending = state.pending;
+        if (!color || !pending) return;
+        addTextNote(pending.text, pending.node, pending.range, color);
+        hideColorBar();
+        window.getSelection()?.removeAllRanges();
+      });
+      document.addEventListener("selectionchange", () => {
+        if (holdingBar) return;
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) hideColorBar();
+      });
+      lecture.parentElement.addEventListener("scroll", () => {
+        if (!chip.hidden && state.pending?.range) placeColorBar(state.pending.range);
+      });
+      askForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        askQuestion(askInput.value);
+      });
+    })();
+  </script>
+</body>
+</html>

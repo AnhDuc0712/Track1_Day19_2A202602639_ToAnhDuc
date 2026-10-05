@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/context.js": { "maxDuration": 30 },
+    "api/ask.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/demo_option_c/index.html" }
+  ]
+}
